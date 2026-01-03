@@ -35,3 +35,4 @@ export 'src/engine/search.dart';
 
 // Notation formats
 export 'src/format/san.dart';
+export 'src/format/pgn.dart';
