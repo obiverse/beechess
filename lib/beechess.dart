@@ -37,3 +37,8 @@ export 'src/engine/tt.dart';
 // Notation formats
 export 'src/format/san.dart';
 export 'src/format/pgn.dart';
+
+// 9S Integration
+export 'src/integration/scroll.dart';
+export 'src/integration/namespace.dart';
+export 'src/integration/clock.dart';
