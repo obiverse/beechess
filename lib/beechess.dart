@@ -7,4 +7,9 @@
 /// - Composition over inheritance
 library beechess;
 
-// Core types will be exported here as implemented
+// Core types
+export 'src/core/square.dart';
+export 'src/core/color.dart';
+export 'src/core/direction.dart';
+export 'src/core/piece.dart';
+export 'src/core/move.dart';
