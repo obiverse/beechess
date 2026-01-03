@@ -24,6 +24,11 @@ export 'src/core/attacks.dart';
 export 'src/core/move_gen.dart';
 export 'src/core/position.dart';
 
+// Game with history
+export 'src/core/game.dart';
+export 'src/core/zobrist.dart';
+
 // Engine
 export 'src/engine/eval.dart';
 export 'src/engine/perft.dart';
+export 'src/engine/search.dart';
