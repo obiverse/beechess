@@ -18,3 +18,8 @@ export 'src/core/move.dart';
 export 'src/core/board.dart';
 export 'src/core/castling.dart';
 export 'src/core/game_state.dart';
+
+// Move generation and attacks
+export 'src/core/attacks.dart';
+export 'src/core/move_gen.dart';
+export 'src/core/position.dart';
