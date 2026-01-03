@@ -52,11 +52,32 @@ for (final move in position.legalMoves()) {
 }
 ```
 
+## Roadmap
+
+Development is tracked via [GitHub Issues](https://github.com/obiverse/beechess/issues) organized into milestones:
+
+| Milestone | Description |
+|-----------|-------------|
+| [M1: Core Types](https://github.com/obiverse/beechess/milestone/1) | Square, Color, Piece, Direction, Move |
+| [M2: Board & State](https://github.com/obiverse/beechess/milestone/2) | Immutable Board, GameState, FEN |
+| [M3: Move Generation](https://github.com/obiverse/beechess/milestone/3) | Pseudo-legal, check detection, legal filtering |
+| [M4: Special Moves](https://github.com/obiverse/beechess/milestone/4) | Castling, en passant, promotion, game end |
+| [M5: Position & Game](https://github.com/obiverse/beechess/milestone/5) | Position class, Game history, Zobrist |
+| [M6: Perft](https://github.com/obiverse/beechess/milestone/6) | Move generation validation |
+| [M7: Engine](https://github.com/obiverse/beechess/milestone/7) | Evaluation, search, transposition table |
+| [M8: Serialization](https://github.com/obiverse/beechess/milestone/8) | SAN, PGN formats |
+| [M9: Integration](https://github.com/obiverse/beechess/milestone/9) | 9S protocol, Beeverse arena |
+
 ## Part of OBIVERSE
 
-beechess is the chess engine powering [beeverse](https://github.com/nicobao/beeverse), a sovereign gaming universe built on:
-- [nine_s](https://github.com/nicobao/nine_s_dart) - Universal data protocol
-- [wallet_core](https://github.com/nicobao/wallet_core) - Cryptographic identity & payments
+beechess is the chess engine powering [beeverse](https://github.com/obiverse/beeverse), a sovereign gaming universe built on:
+- [nine_s](https://github.com/obiverse/nine_s_dart) - Universal data protocol
+- [wallet_core](https://github.com/obiverse/wallet_core) - Cryptographic identity & payments
+
+## References
+
+- Original inspiration: [mchess-reforged](https://github.com/mesb/mchess-reforged) (Go)
+- Design wiki: `9s read /wiki/beeverse/beechess-architecture`
 
 ## License
 
