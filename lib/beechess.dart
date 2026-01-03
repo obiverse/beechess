@@ -13,3 +13,8 @@ export 'src/core/color.dart';
 export 'src/core/direction.dart';
 export 'src/core/piece.dart';
 export 'src/core/move.dart';
+
+// Board and state
+export 'src/core/board.dart';
+export 'src/core/castling.dart';
+export 'src/core/game_state.dart';
