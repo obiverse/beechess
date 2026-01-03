@@ -23,3 +23,7 @@ export 'src/core/game_state.dart';
 export 'src/core/attacks.dart';
 export 'src/core/move_gen.dart';
 export 'src/core/position.dart';
+
+// Engine
+export 'src/engine/eval.dart';
+export 'src/engine/perft.dart';
