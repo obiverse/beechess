@@ -32,3 +32,6 @@ export 'src/core/zobrist.dart';
 export 'src/engine/eval.dart';
 export 'src/engine/perft.dart';
 export 'src/engine/search.dart';
+
+// Notation formats
+export 'src/format/san.dart';
