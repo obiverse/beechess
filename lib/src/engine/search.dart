@@ -1,7 +1,11 @@
+import 'dart:math';
+
 import '../core/color.dart';
 import '../core/move.dart';
 import '../core/position.dart';
+import '../core/zobrist.dart';
 import 'eval.dart';
+import 'tt.dart';
 
 /// Search result containing the best move and score.
 class SearchResult {
@@ -17,12 +21,19 @@ class SearchResult {
   final int nodesSearched;
 
   @override
-  String toString() => 'SearchResult($bestMove, score: $score, nodes: $nodesSearched)';
+  String toString() =>
+      'SearchResult($bestMove, score: $score, nodes: $nodesSearched)';
 }
 
-/// Chess engine search using alpha-beta pruning.
+/// Chess engine search using alpha-beta pruning with transposition table.
 class Search {
   Search._();
+
+  /// Shared transposition table (64 MB default).
+  static final TranspositionTable _tt = TranspositionTable(sizeMB: 64);
+
+  /// Get the transposition table for inspection/clearing.
+  static TranspositionTable get transpositionTable => _tt;
 
   /// Evaluate position from side-to-move perspective (for negamax).
   static int _evaluate(Position position) {
@@ -30,7 +41,7 @@ class Search {
     return position.turn == Color.white ? score : -score;
   }
 
-  /// Search for the best move using iterative deepening.
+  /// Search for the best move using alpha-beta with transposition table.
   ///
   /// Returns the best move found within the given depth.
   static SearchResult search(Position position, int depth) {
@@ -38,18 +49,21 @@ class Search {
       return SearchResult(null, _evaluate(position), 1);
     }
 
+    final hash = Zobrist.hashPosition(position);
     int nodesSearched = 0;
     Move? bestMove;
     int bestScore = -Evaluator.mateScore - 1;
+    const origAlpha = -Evaluator.mateScore;
+    var alpha = origAlpha;
+    const beta = Evaluator.mateScore;
 
     final moves = position.legalMoves;
     if (moves.isEmpty) {
-      // No legal moves - checkmate or stalemate
       return SearchResult(null, _evaluate(position), 1);
     }
 
-    // Order moves for better pruning (captures first, etc.)
-    final orderedMoves = _orderMoves(position, moves);
+    // Order moves with TT move first
+    final orderedMoves = _orderMoves(position, moves, hash);
 
     for (final move in orderedMoves) {
       final newPos = position.makeMove(move);
@@ -58,8 +72,8 @@ class Search {
       final result = _alphaBeta(
         newPos,
         depth - 1,
-        -Evaluator.mateScore,
-        -bestScore,
+        -beta,
+        -alpha,
       );
 
       nodesSearched += result.nodesSearched;
@@ -69,18 +83,54 @@ class Search {
         bestScore = score;
         bestMove = move;
       }
+
+      if (score > alpha) {
+        alpha = score;
+      }
     }
+
+    // Store in TT
+    final scoreType = bestScore <= origAlpha
+        ? ScoreType.upperBound
+        : (bestScore >= beta ? ScoreType.lowerBound : ScoreType.exact);
+
+    _tt.store(
+      hash: hash,
+      move: bestMove,
+      score: bestScore,
+      depth: depth,
+      type: scoreType,
+    );
 
     return SearchResult(bestMove, bestScore, nodesSearched);
   }
 
-  /// Alpha-beta search with negamax framework.
+  /// Alpha-beta search with negamax framework and TT.
   static SearchResult _alphaBeta(
     Position position,
     int depth,
     int alpha,
     int beta,
   ) {
+    final hash = Zobrist.hashPosition(position);
+    final origAlpha = alpha;
+
+    // Probe transposition table
+    final ttEntry = _tt.probe(hash);
+    if (ttEntry != null && ttEntry.depth >= depth) {
+      switch (ttEntry.type) {
+        case ScoreType.exact:
+          return SearchResult(ttEntry.move, ttEntry.score, 1);
+        case ScoreType.lowerBound:
+          alpha = max(alpha, ttEntry.score);
+        case ScoreType.upperBound:
+          beta = min(beta, ttEntry.score);
+      }
+      if (alpha >= beta) {
+        return SearchResult(ttEntry.move, ttEntry.score, 1);
+      }
+    }
+
     // Terminal node or depth limit
     if (depth == 0 || position.isGameOver) {
       return SearchResult(null, _evaluate(position), 1);
@@ -95,7 +145,7 @@ class Search {
       return SearchResult(null, _evaluate(position), 1);
     }
 
-    final orderedMoves = _orderMoves(position, moves);
+    final orderedMoves = _orderMoves(position, moves, hash);
 
     for (final move in orderedMoves) {
       final newPos = position.makeMove(move);
@@ -120,18 +170,39 @@ class Search {
       }
     }
 
+    // Store in TT
+    final scoreType = bestScore <= origAlpha
+        ? ScoreType.upperBound
+        : (bestScore >= beta ? ScoreType.lowerBound : ScoreType.exact);
+
+    _tt.store(
+      hash: hash,
+      move: bestMove,
+      score: bestScore,
+      depth: depth,
+      type: scoreType,
+    );
+
     return SearchResult(bestMove, bestScore, nodesSearched);
   }
 
   /// Order moves for better pruning.
   ///
-  /// Good move ordering significantly improves alpha-beta efficiency.
-  static List<Move> _orderMoves(Position position, List<Move> moves) {
+  /// TT move is tried first, then captures (MVV-LVA), promotions, center moves.
+  static List<Move> _orderMoves(Position position, List<Move> moves, int hash) {
+    // Get TT move if available
+    final ttMove = _tt.probe(hash)?.move;
+
     // Score each move for ordering
     final scored = moves.map((move) {
       int score = 0;
 
-      // Prioritize captures (MVV-LVA: Most Valuable Victim - Least Valuable Attacker)
+      // TT move gets highest priority
+      if (ttMove != null && move == ttMove) {
+        score += 100000;
+      }
+
+      // Prioritize captures (MVV-LVA)
       final capturedPiece = position.board[move.to];
       if (capturedPiece != null) {
         score += 10000 + capturedPiece.type.value;
@@ -170,6 +241,7 @@ class Search {
   /// Find best move with iterative deepening.
   ///
   /// Searches progressively deeper, returning results for each depth.
+  /// Uses transposition table to speed up deeper searches.
   static Iterable<SearchResult> iterativeDeepening(
     Position position, {
     int maxDepth = 10,
@@ -191,4 +263,7 @@ class Search {
       }
     }
   }
+
+  /// Clear the transposition table.
+  static void clearTT() => _tt.clear();
 }

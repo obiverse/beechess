@@ -1,6 +1,8 @@
 import 'dart:math';
 
+import 'color.dart';
 import 'piece.dart';
+import 'position.dart';
 import 'square.dart';
 
 /// Zobrist hashing for position identification.
@@ -60,6 +62,37 @@ class Zobrist {
   /// Get hash key for en passant file.
   static int enPassantKey(int file) {
     return _enPassantFile[file];
+  }
+
+  /// Compute complete Zobrist hash for a position.
+  static int hashPosition(Position position) {
+    int hash = 0;
+
+    // Piece placement
+    for (final sq in position.board.occupiedSquares) {
+      final piece = position.board[sq]!;
+      hash ^= pieceSquareKey(piece, sq);
+    }
+
+    // Side to move
+    if (position.turn == Color.black) {
+      hash ^= sideToMove;
+    }
+
+    // Castling rights (pack into 4 bits)
+    int castlingBits = 0;
+    if (position.castling.whiteKingside) castlingBits |= 1;
+    if (position.castling.whiteQueenside) castlingBits |= 2;
+    if (position.castling.blackKingside) castlingBits |= 4;
+    if (position.castling.blackQueenside) castlingBits |= 8;
+    hash ^= castlingKey(castlingBits);
+
+    // En passant file
+    if (position.enPassant != null) {
+      hash ^= enPassantKey(position.enPassant!.file);
+    }
+
+    return hash;
   }
 }
 
